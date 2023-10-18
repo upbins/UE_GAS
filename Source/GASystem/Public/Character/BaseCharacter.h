@@ -32,4 +32,5 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> AttributeSet; //GAS属性
 
+	virtual void InitAbilityActorInfo();
 };

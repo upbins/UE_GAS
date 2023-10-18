@@ -3,6 +3,7 @@
 
 #include "UI/WidgetController/OverlayWidgetController.h"
 
+#include "AbilitySystem/BaseAbilitySystemComponent.h"
 #include "AbilitySystem/BaseAttributeSet.h"
 
 void UOverlayWidgetController::BroadcastInitialValues()
@@ -21,6 +22,23 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(BaseAttributeSet->GetMaxHealthAttribute()).AddUObject(this,&UOverlayWidgetController::OnMaxHealthChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(BaseAttributeSet->GetManaAttribute()).AddUObject(this,&UOverlayWidgetController::OnManaChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(BaseAttributeSet->GetMaxManaAttribute()).AddUObject(this,&UOverlayWidgetController::OnMaxManaChanged);
+	Cast<UBaseAbilitySystemComponent>(AbilitySystemComponent)->EffectAssetTagDelegate.AddLambda(
+		[this](const FGameplayTagContainer& AssetTags)
+	{
+			for (auto Tag:AssetTags)
+			{
+				//{"A.1"}.HasTag("A") will return True, {"A"}.HasTag("A.1") will return False
+				FGameplayTag MessagePrefixTag = FGameplayTag::RequestGameplayTag(FName("Message"));
+				const bool bIsMatchTag = Tag.MatchesTag(MessagePrefixTag);
+				if (bIsMatchTag)
+				{
+					FUIWidgetRow* Row = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable,Tag);
+					OnMessageWidgetRowSignature.Broadcast(*Row);
+				}
+				
+			}
+	}
+	);
 }
 
 void UOverlayWidgetController::OnHealthChanged(const FOnAttributeChangeData& Data) const
