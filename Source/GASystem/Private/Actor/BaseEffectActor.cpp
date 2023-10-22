@@ -62,7 +62,7 @@ void ABaseEffectActor::OnOverlap(AActor* TargetActor)
 
 void ABaseEffectActor::OnEndOverlap(AActor* TargetActor)
 {
-	if (InfiniteEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
+	if (InstantEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
 	{
 		ApplyEffectToTarget(TargetActor,InstantGamePlayEffectClass);
 	}

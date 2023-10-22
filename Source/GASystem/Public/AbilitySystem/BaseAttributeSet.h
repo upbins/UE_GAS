@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
+#include "BaseGamePlayTags.h"
 #include "BaseAttributeSet.generated.h"
 
 //宏定义GET SET INIT
@@ -39,6 +40,11 @@ struct FEffectProperties
 	UPROPERTY()
 	ACharacter* TargetCharacter = nullptr;
 };
+
+// typedef is specific to the FGameplayAttribute() signature, but TStaticFunPtr is generic to any signature chosen
+//typedef TBaseStaticDelegateInstance<FGameplayAttribute(), FDefaultDelegateUserPolicy>::FFuncPtr FAttributeFuncPtr;
+template<class T>
+using TStaticFuncPtr = typename TBaseStaticDelegateInstance<T, FDefaultDelegateUserPolicy>::FFuncPtr;
 /**
  * 
  */
@@ -48,6 +54,13 @@ class GASYSTEM_API UBaseAttributeSet : public UAttributeSet
 	GENERATED_BODY()
 public:
 	UBaseAttributeSet();
+
+	TMap<FGameplayTag,TStaticFuncPtr<FGameplayAttribute()>>TagsToAttributes;
+	
+	//example
+	// TStaticFuncPtr<float(int a,int b )> RandomFunctionPointer;
+	// static float RandomFunc(int a,int b){return 0.f;};
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual  void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
@@ -225,6 +238,7 @@ public:
 	void OnRep_PhysicalResistance(const FGameplayAttributeData& OldPhysicalResistance) const;
 private:
 	void SetEffectProperties(const FGameplayEffectModCallbackData& Data,FEffectProperties& Props) const;
+	const FBaseGameplayTags& BaseGameplayTags = FBaseGameplayTags::Get();
 };
 
 

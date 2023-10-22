@@ -5,6 +5,7 @@
 #include "AbilitySystem/BaseAbilitySystemComponent.h"
 #include "AbilitySystem/BaseAttributeSet.h"
 #include "GASystem/Define.h"
+#include "Player/BasePlayerState.h"
 
 
 // Sets default values
@@ -30,6 +31,11 @@ void AEnemyCharacter::InitAbilityActorInfo()
 	Cast<UBaseAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
 }
 
+void AEnemyCharacter::InitializeDefaultAttributes() const
+{
+	
+}
+
 void AEnemyCharacter::HighlightActor()
 {
 	bHighlighted = true;
@@ -44,6 +50,11 @@ void AEnemyCharacter::UnHighlightActor()
 	bHighlighted = false;
 	GetMesh()->SetRenderCustomDepth(false);
 	Weapon->SetRenderCustomDepth(false);
+}
+
+int32 AEnemyCharacter::GetObjectLevel_Implementation()
+{
+	return Level;
 }
 
 

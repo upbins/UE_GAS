@@ -46,6 +46,13 @@ void APlayerCharacter::OnRep_PlayerState()
 	InitAbilityActorInfo();
 }
 
+int32 APlayerCharacter::GetObjectLevel_Implementation()
+{
+	const ABasePlayerState* AuraPlayerState = GetPlayerState<ABasePlayerState>();
+    check(AuraPlayerState);
+    return AuraPlayerState->GetObjectLevel();
+}
+
 void APlayerCharacter::InitAbilityActorInfo()
 {
 	ABasePlayerState* BasePlayerState = GetPlayerState<ABasePlayerState>();
@@ -61,6 +68,10 @@ void APlayerCharacter::InitAbilityActorInfo()
 			BaseHUD->InitOverlay(PlayerController,BasePlayerState,AbilitySystemComponent,AttributeSet);
 		}
 	}
+	InitializeDefaultAttributes();
 }
+
+
+
 
 
