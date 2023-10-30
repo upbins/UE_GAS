@@ -4,12 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Input/InputConfig.h"
 #include "BasePlayerController.generated.h"
 
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class IEnemyInterface;
+class UBaseAbilitySystemComponent;
+class USplineComponent;
 /**
  * 
  */
@@ -35,7 +38,31 @@ private:
 	TObjectPtr<IEnemyInterface> ThisActor;
 	
 	void Move(const FInputActionValue& InputActionValue);
-
+	FHitResult CursorHit;
 	void CursorTrace();
+
+	void AbilityInputTagPressed(FGameplayTag InputTag);
+	void AbilityInputTagReleased(FGameplayTag InputTag);
+	void AbilityInputTagHeld(FGameplayTag InputTag);
+
+	UPROPERTY(EditDefaultsOnly,Category="Input")
+	TObjectPtr<UInputConfig> InputConfig;
+
+	UPROPERTY()
+	TObjectPtr<UBaseAbilitySystemComponent> BaseAbilitySystemComponent;
+	UBaseAbilitySystemComponent* GetASC();
+
+	FVector CachedDestination = FVector::ZeroVector;
+	float FollowTime = 0.f;
+	float ShortPressThreshold = 0.5f;
+	bool bAutoRunning = false;
+	bool bTargeting = false;
 	
+	UPROPERTY(EditDefaultsOnly)
+	float AutoRunAcceptanceRadius = 50.f;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USplineComponent> Spline;
+
+	void AutoRun();
 };

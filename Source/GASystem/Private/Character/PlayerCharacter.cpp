@@ -37,6 +37,7 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	//Init ability actor info for the server
 	InitAbilityActorInfo();
+	AddCharacterAbilities();
 }
 
 void APlayerCharacter::OnRep_PlayerState()
@@ -55,6 +56,7 @@ int32 APlayerCharacter::GetObjectLevel_Implementation()
 
 void APlayerCharacter::InitAbilityActorInfo()
 {
+
 	ABasePlayerState* BasePlayerState = GetPlayerState<ABasePlayerState>();
 	check(BasePlayerState);
 	AbilitySystemComponent = BasePlayerState->GetAbilitySystemComponent();

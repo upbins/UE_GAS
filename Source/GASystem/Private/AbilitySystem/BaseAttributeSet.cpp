@@ -8,8 +8,6 @@
 #include "GameplayEffectExtension.h"
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
-#include "opensubdiv/far/error.h"
-#include "opensubdiv/far/error.h"
 
 UBaseAttributeSet::UBaseAttributeSet()
 {

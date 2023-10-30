@@ -3,19 +3,44 @@
 
 #include "Player/BasePlayerController.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "BaseGamePlayTags.h"
 #include "EnhancedInputSubsystems.h"
-#include "EnhancedInputComponent.h"
+#include "NavigationPath.h"
+#include "NavigationSystem.h"
+#include "AbilitySystem/BaseAbilitySystemComponent.h"
+#include "Components/SplineComponent.h"
+#include "Input/BaseInputComponent.h"
 #include "Interaction/EnemyInterface.h"
 
 ABasePlayerController::ABasePlayerController()
 {
 	bReplicates = true;
+	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
 }
 
 void ABasePlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 	CursorTrace();
+	AutoRun();
+}
+
+void ABasePlayerController::AutoRun()
+{
+	
+	if (!bAutoRunning) return;
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		const FVector LocationOnSpline = Spline->FindLocationClosestToWorldLocation(ControlledPawn->GetActorLocation(),ESplineCoordinateSpace::World);
+		const FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline,ESplineCoordinateSpace::World);
+		ControlledPawn->AddMovementInput(Direction);
+		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
+		if (DistanceToDestination <= AutoRunAcceptanceRadius)
+		{
+			bAutoRunning = false;
+		}
+	}
 }
 
 void ABasePlayerController::BeginPlay()
@@ -40,8 +65,9 @@ void ABasePlayerController::BeginPlay()
 void ABasePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
-	EnhancedInputComponent->BindAction(MoveAction,ETriggerEvent::Triggered,this,&ABasePlayerController::Move);
+	UBaseInputComponent* BaseInputComponent = CastChecked<UBaseInputComponent>(InputComponent);
+	BaseInputComponent->BindAction(MoveAction,ETriggerEvent::Triggered,this,&ABasePlayerController::Move);
+	BaseInputComponent->BindAbilityActions(InputConfig,this,&ThisClass::AbilityInputTagPressed,&ThisClass::AbilityInputTagReleased,&ThisClass::AbilityInputTagHeld);
 }
 
 void ABasePlayerController::Move(const FInputActionValue& InputActionValue)
@@ -60,59 +86,114 @@ void ABasePlayerController::Move(const FInputActionValue& InputActionValue)
 
 void ABasePlayerController::CursorTrace()
 {
-	FHitResult CursorHit;
 	GetHitResultUnderCursor(ECC_Visibility,false,CursorHit);
 	if (!CursorHit.bBlockingHit) return;
 	
 	LastActor = ThisActor;
 	ThisActor = Cast<IEnemyInterface>(CursorHit.GetActor());
 
-	/**
-	 * Line trace from cursor.there are serveral scenarios
-	 * A. LastActor is null && ThisActor is null
-	 *		- Do nothing
-	 * B. LastActor is null && ThisActor is valid
-	 *		- Highlight ThisActor
-	 * C. LastActor is vaild && ThisActor is null
-	 *		- UnHighlight LastActor
-	 * D. Both actors are valid,but LastActor != ThisActor
-	 *		- UnHighlight LastActor and Highlight ThisActor
-	 * E. Both actors are valid,and are the same actor
-	 *		- Do nothing
-	 */
-	if(LastActor == nullptr)
+	if (LastActor != ThisActor)
 	{
-		if (ThisActor != nullptr)
+		if (LastActor)
 		{
-			//case B
+			LastActor->UnHighlightActor();
+		}
+		if (ThisActor)
+		{
 			ThisActor->HighlightActor();
 		}
-		else
+	}
+}
+
+void ABasePlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
+{
+	if (InputTag.MatchesTagExact(FBaseGameplayTags::Get().InputTag_LMB))
+	{
+		bTargeting = ThisActor  ? true : false;
+		bAutoRunning = false;
+	}
+
+}
+
+void ABasePlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
+{
+	if (!InputTag.MatchesTagExact(FBaseGameplayTags::Get().InputTag_LMB))
+	{
+		if (GetASC())
 		{
-			
-			// CaseA - both are null ,do nothing
+			GetASC()->AbilityInputTagReleased(InputTag);
+		}
+		return;
+	}
+	if (bTargeting)
+	{
+		if (GetASC())
+		{
+			GetASC()->AbilityInputTagReleased(InputTag);
 		}
 	}
 	else
 	{
-		if(ThisActor == nullptr)
+		const APawn* ControlledPawn = GetPawn();
+		if (FollowTime <= ShortPressThreshold && ControlledPawn)
 		{
-			//Case C
-			LastActor->UnHighlightActor();
+			if (UNavigationPath* NavPath =  UNavigationSystemV1::FindPathToLocationSynchronously(this,ControlledPawn->GetActorLocation(),CachedDestination))
+			{
+				Spline->ClearSplinePoints();
+				for(const FVector& PointLoc:NavPath->PathPoints)
+				{
+					Spline->AddSplinePoint(PointLoc,ESplineCoordinateSpace::World);
+				}
+				if (!NavPath->PathPoints.IsEmpty())
+				{
+					CachedDestination = NavPath->PathPoints[NavPath->PathPoints.Num() - 1];
+					bAutoRunning = true;
+				}
+			}
 		}
-		else
+		FollowTime = 0.f;
+		bTargeting = false;
+	}
+}
+
+void ABasePlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
+{
+	if (!InputTag.MatchesTagExact(FBaseGameplayTags::Get().InputTag_LMB))
+	{
+		if (GetASC())
 		{
-			if (LastActor != ThisActor)
-			{
-				//Case D
-				LastActor->UnHighlightActor();
-				ThisActor->HighlightActor();
-			}
-			else
-			{
-				//Case E - do nothing
-			}
-		
+			GetASC()->AbilityInputTagHeld(InputTag);
+		}
+		return;
+	}
+	if (bTargeting)
+	{
+		if (GetASC())
+		{
+			GetASC()->AbilityInputTagHeld(InputTag);
+		}
+	}
+	else
+	{
+		FollowTime += GetWorld()->GetDeltaSeconds();
+		if(CursorHit.bBlockingHit)
+		{
+			CachedDestination = CursorHit.ImpactPoint;
+		}
+		if (APawn* ControlledPawn = GetPawn())
+		{
+			const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+			ControlledPawn->AddMovementInput(WorldDirection);
 		}
 	}
 }
+
+UBaseAbilitySystemComponent* ABasePlayerController::GetASC()
+{
+	if(BaseAbilitySystemComponent == nullptr)
+	{
+		BaseAbilitySystemComponent = Cast<UBaseAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn<APawn>()));
+	}
+	return BaseAbilitySystemComponent;
+}
+

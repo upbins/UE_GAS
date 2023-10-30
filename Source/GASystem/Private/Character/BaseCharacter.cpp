@@ -5,6 +5,7 @@
 
 #include "GameplayEffectTypes.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystem/BaseAbilitySystemComponent.h"
 // Sets default values
 ABaseCharacter::ABaseCharacter()
 {
@@ -47,6 +48,13 @@ void ABaseCharacter::InitializeDefaultAttributes() const
 	ApplyEffectToSelf(DefaultPrimaryAttributes, 1.f);
 	ApplyEffectToSelf(DefaultSecondaryAttributes, 1.f);
 	ApplyEffectToSelf(DefaultVitalAttributes, 1.f);
+}
+
+void ABaseCharacter::AddCharacterAbilities()
+{
+	UBaseAbilitySystemComponent* ASC = CastChecked<UBaseAbilitySystemComponent>(AbilitySystemComponent);
+	if(!HasAuthority()) return;
+	ASC->AddCharacterAbilities(StartupAbilities);
 }
 
 
