@@ -24,4 +24,6 @@ class GASYSTEM_API ICombatInterface
 public:
 	UFUNCTION(BlueprintNativeEvent)
 	int32 GetObjectLevel();
+
+	virtual FVector GetCombatSocketLocation();
 };
