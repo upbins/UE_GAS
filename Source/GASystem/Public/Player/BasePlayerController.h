@@ -32,7 +32,12 @@ private:
 	
 	UPROPERTY(EditAnywhere,Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
+	UPROPERTY(EditAnywhere,Category = "Input")
+	TObjectPtr<UInputAction> ShiftAction;
 
+	void ShiftPressed();
+	void ShiftReleased();
+	bool bShiftKeyDown = false;
 	//用于目标点击选中
 	TObjectPtr<IEnemyInterface> LastActor;
 	TObjectPtr<IEnemyInterface> ThisActor;

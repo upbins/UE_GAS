@@ -67,6 +67,8 @@ void ABasePlayerController::SetupInputComponent()
 	Super::SetupInputComponent();
 	UBaseInputComponent* BaseInputComponent = CastChecked<UBaseInputComponent>(InputComponent);
 	BaseInputComponent->BindAction(MoveAction,ETriggerEvent::Triggered,this,&ABasePlayerController::Move);
+	BaseInputComponent->BindAction(ShiftAction,ETriggerEvent::Started,this,&ABasePlayerController::ShiftPressed);
+	BaseInputComponent->BindAction(ShiftAction,ETriggerEvent::Completed,this,&ABasePlayerController::ShiftReleased);
 	BaseInputComponent->BindAbilityActions(InputConfig,this,&ThisClass::AbilityInputTagPressed,&ThisClass::AbilityInputTagReleased,&ThisClass::AbilityInputTagHeld);
 }
 
@@ -125,15 +127,13 @@ void ABasePlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 		}
 		return;
 	}
-	if (bTargeting)
+	if (GetASC())
+    {
+    	GetASC()->AbilityInputTagReleased(InputTag);
+    }
+	if (!bTargeting && !bShiftKeyDown)
 	{
-		if (GetASC())
-		{
-			GetASC()->AbilityInputTagReleased(InputTag);
-		}
-	}
-	else
-	{
+		
 		const APawn* ControlledPawn = GetPawn();
 		if (FollowTime <= ShortPressThreshold && ControlledPawn)
 		{
@@ -166,7 +166,7 @@ void ABasePlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 		}
 		return;
 	}
-	if (bTargeting)
+	if (bTargeting || bShiftKeyDown)
 	{
 		if (GetASC())
 		{
@@ -197,3 +197,13 @@ UBaseAbilitySystemComponent* ABasePlayerController::GetASC()
 	return BaseAbilitySystemComponent;
 }
 
+
+void ABasePlayerController::ShiftPressed()
+{
+	bShiftKeyDown = true;
+};
+
+void ABasePlayerController::ShiftReleased()
+{
+	bShiftKeyDown = false;
+};

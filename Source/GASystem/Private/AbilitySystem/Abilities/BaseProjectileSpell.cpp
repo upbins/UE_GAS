@@ -3,6 +3,8 @@
 
 #include "AbilitySystem/Abilities/BaseProjectileSpell.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Actor/BaseProjectile.h"
 #include "Interaction/CombatInterface.h"
 
@@ -11,8 +13,13 @@ void UBaseProjectileSpell::ActivateAbility(const FGameplayAbilitySpecHandle Hand
                                            const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	
+}
 
-	const bool bIsServer = HasAuthority(&ActivationInfo);
+void UBaseProjectileSpell::SpawnProjectile(const FVector& TargetLocation)
+{
+	
+	const bool bIsServer = GetAvatarActorFromActorInfo()->HasAuthority();
 	if (!bIsServer)
 	{
 		return;
@@ -21,21 +28,22 @@ void UBaseProjectileSpell::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 	if (CombatInterface)
 	{
 		const FVector SocketLocation = CombatInterface->GetCombatSocketLocation();
+		FRotator Rotation = (TargetLocation - SocketLocation).Rotation();
+		Rotation.Pitch = 0.f;
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(SocketLocation);
-		//TODO: Set the projectile rotation
+		SpawnTransform.SetRotation(Rotation.Quaternion());
+
 		ABaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ABaseProjectile>(
 			ProjectileClass,
 			SpawnTransform,
 			GetOwningActorFromActorInfo(),
 			Cast<APawn>(GetOwningActorFromActorInfo()),
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-
-		//TODO: Give then projectile a gameplay effect spec for causing damage;
-		
+		const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo());
+		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass,GetAbilityLevel(),SourceASC->MakeEffectContext());
+		Projectile->DamageEffectSpecHandle = SpecHandle;
 		Projectile->FinishSpawning(SpawnTransform);
 		
 	}
-
-	
 }

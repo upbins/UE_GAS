@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "Interaction/EnemyInterface.h"
+#include "UI/WidgetController/OverlayWidgetController.h"
 #include "EnemyCharacter.generated.h"
+
+class UWidgetComponent;
 
 UCLASS()
 class GASYSTEM_API AEnemyCharacter : public ABaseCharacter,public  IEnemyInterface
@@ -25,6 +28,12 @@ public:
 	/** Combat Interface */
 	virtual int32 GetObjectLevel_Implementation() override;
 	/** end Combat Interface */
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChangedSignature OnHealthChange;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChangedSignature OnMaxHealthChange;
 protected:
 	// Called when the game starts or when spawned
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defaults")
@@ -33,5 +42,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;
 	virtual void InitializeDefaultAttributes() const override;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	TObjectPtr<UWidgetComponent> HealthBar;
 };
 	

@@ -18,6 +18,11 @@ private:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
 protected:
+	UFUNCTION(BlueprintCallable,Category = "Projectile")
+	void SpawnProjectile(const FVector& TargetLocation);
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	TSubclassOf<ABaseProjectile> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly)
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
 };

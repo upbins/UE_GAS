@@ -6,11 +6,18 @@
 #include "GameplayEffectTypes.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/BaseAbilitySystemComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GASystem/Define.h"
 // Sets default values
 ABaseCharacter::ABaseCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Projectile,ECR_Overlap);
+	GetMesh()->SetGenerateOverlapEvents(true);
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetupAttachment(GetMesh(),FName("WeaponHandSocket"));//附加到挂接点上
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);//设置碰撞类型
